@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:clickable="false"
+    android:focusable="false"
+    android:longClickable="false"
+    android:enabled="false">
+
+    <ImageView
+        android:id="@+id/visual_view"
+        android:layout_height="wrap_content"
+        android:layout_width="wrap_content"
+        android:src="@mipmap/ic_launcher_round"
+        tools:ignore="HardcodedText"
+        android:clickable="false"
+        android:focusable="false"
+        android:longClickable="false"
+        android:enabled="false"/>
+
+    <View
+        android:id="@+id/touchable"
+        android:layout_width="20dp"
+        android:layout_height="20dp"
+        android:layout_gravity="center"
+        android:background="@android:color/holo_red_dark"
+        android:clickable="true"
+        android:focusable="true" />
+<!--    android:background="@android:color/transparent" />-->
+
+</FrameLayout>

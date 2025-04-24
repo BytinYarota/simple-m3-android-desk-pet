@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<pl.droidsonroids.gif.GifImageView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+
+    android:id="@+id/visual_view"
+
+    android:layout_height="wrap_content"
+    android:layout_width="wrap_content"
+    tools:ignore="HardcodedText"
+    android:clickable="false"
+    android:focusable="false"
+    android:longClickable="false"
+    android:enabled="false"/>
