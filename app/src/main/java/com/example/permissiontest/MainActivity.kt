@@ -1,7 +1,6 @@
 package com.example.permissiontest
 
 import android.os.Bundle
-import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import android.content.Intent
@@ -10,20 +9,17 @@ import android.net.Uri
 import android.os.Build
 import android.provider.Settings
 import android.view.WindowManager
-import android.widget.Button
-import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import android.Manifest
-import android.app.Activity
 import android.app.ActivityManager
-import android.app.Notification
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent.FLAG_ACTIVITY_NEW_TASK
 import android.os.Handler
 import android.os.Looper
 import android.os.Message
-import android.view.View
+import android.util.Log
+import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
 
 /**
@@ -46,8 +42,9 @@ class MainActivity : AppCompatActivity() {
         if(!serviceRunning()){
             progress(ACTIVITY_STARTED)
         }else{
-            Toast.makeText(this, "Service Running!", Toast.LENGTH_SHORT)
-                .show()
+            val openSettingsIntent = Intent(this, SettingsActivity::class.java)
+            openSettingsIntent.addFlags(FLAG_ACTIVITY_NEW_TASK)
+            startActivity(openSettingsIntent)
             finishAndRemoveTask()
         }
     }
@@ -56,24 +53,24 @@ class MainActivity : AppCompatActivity() {
         override fun handleMessage(msg: Message) {
             when (msg.what) {
                 ACTIVITY_STARTED -> {
-                    popText("act start")
+                    printLog("act start")
                     this.post{
                         checkOverlayPermission()
                     }
                 }
 
                 OVERLAY_PERMISSION_GAINED -> {
-                    popText("overlay gained")
+                    printLog("overlay gained")
                     checkNotificationPermission()
                 }
 
                 NOTIFICATION_PERMISSION_GAINED -> {
-                    popText("notification gained")
+                    printLog("notification gained")
                     startMainService()
                 }
 
                 SERVICE_STARTED -> {
-                    popText("service start")
+                    printLog("service start")
                     finishAndRemoveTask()
                 }
             }
@@ -175,6 +172,10 @@ class MainActivity : AppCompatActivity() {
 
     private fun popText(text: CharSequence) {
         Toast.makeText(this, text, Toast.LENGTH_SHORT).show()
+    }
+
+    private fun printLog(text: String) {
+        Log.d("PermissionTest", text)
     }
 
     private fun serviceRunning(): Boolean {
