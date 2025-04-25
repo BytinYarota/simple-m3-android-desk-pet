@@ -30,6 +30,9 @@ class MainActivity : AppCompatActivity() {
     private lateinit var overlayPermissionLauncher: ActivityResultLauncher<Intent>
     private lateinit var requestPermissionLauncher: ActivityResultLauncher<String>
 
+    /**
+     * Sets Activity invisible and starts permission check
+     */
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -49,6 +52,9 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    /**
+     * Handler for main thread message
+     */
     private val mainHandler = object : Handler(Looper.getMainLooper()) {
         override fun handleMessage(msg: Message) {
             when (msg.what) {
@@ -77,6 +83,9 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    /**
+     * Checks overlay permission
+     */
     private fun checkOverlayPermission() {
         if (!Settings.canDrawOverlays(this)) {
             requestOverlayPermission()
@@ -99,7 +108,9 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-
+    /**
+     * Starts main service thread
+     */
     private fun startMainService() {
         val serviceIntent = Intent(this, MainService::class.java)
         serviceIntent.addFlags(FLAG_ACTIVITY_NEW_TASK)
@@ -113,6 +124,9 @@ class MainActivity : AppCompatActivity() {
         progress(SERVICE_STARTED)
     }
 
+    /**
+     * Initializes late init launchers for permission request
+     */
     private fun initializeLauncher() {
         overlayPermissionLauncher = registerForActivityResult(
             ActivityResultContracts.StartActivityForResult()
@@ -135,6 +149,9 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    /**
+     * Requests overlay permission by starting system settings activity
+     */
     private fun requestOverlayPermission() {
         popText("requesting overlay")
         val intent = Intent(
@@ -144,7 +161,9 @@ class MainActivity : AppCompatActivity() {
         overlayPermissionLauncher.launch(intent)
     }
 
-
+    /**
+     * Sets activity not interactable
+     */
     private fun deinteractableActivity() {
         window.setFlags(
             WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE,
@@ -152,6 +171,9 @@ class MainActivity : AppCompatActivity() {
         )
     }
 
+    /**
+     * Pops failure message and finishes activity
+     */
     private fun failProgress(failure: Int) {
         when (failure) {
             OVERLAY_FORBIDDEN -> {
@@ -165,19 +187,31 @@ class MainActivity : AppCompatActivity() {
         finishAndRemoveTask()
     }
 
+    /**
+     * Pushes progress message to main thread handler
+     */
     private fun progress(what: Int) {
         val msg = mainHandler.obtainMessage(what)
         mainHandler.sendMessage(msg)
     }
 
+    /**
+     * Text popper
+     */
     private fun popText(text: CharSequence) {
         Toast.makeText(this, text, Toast.LENGTH_SHORT).show()
     }
 
+    /**
+     * Log printer
+     */
     private fun printLog(text: String) {
         Log.d("PermissionTest", text)
     }
 
+    /**
+     * Checks if main service is running
+     */
     private fun serviceRunning(): Boolean {
         val manager = getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
         val runningServices = manager.getRunningServices(Integer.MAX_VALUE)
@@ -188,6 +222,9 @@ class MainActivity : AppCompatActivity() {
         return isRunning
     }
 
+    /**
+     * Hides view
+     */
     private fun hideView() {
         window.apply {
             addFlags(WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS)
@@ -199,11 +236,14 @@ class MainActivity : AppCompatActivity() {
     }
 
     private companion object {
+
+        // Progress status codes
         const val ACTIVITY_STARTED = 0
         const val OVERLAY_PERMISSION_GAINED = 1
         const val NOTIFICATION_PERMISSION_GAINED = 2
         const val SERVICE_STARTED = 3
 
+        // Failure codes
         const val OVERLAY_FORBIDDEN = 4
         const val NOTIFICATION_FORBIDDEN = 5
     }

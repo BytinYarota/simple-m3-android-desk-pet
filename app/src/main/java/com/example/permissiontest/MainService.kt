@@ -42,16 +42,24 @@ class MainService : Service() {
     private lateinit var ruaGif: GifDrawable
     private var isRelaxed = true
 
+    /**
+     * Initialize service
+     **/
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
 
         val notification = buildNotification()
         startForeground(1, notification)
+
+        // Initializes views
         windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
         viewArray = createFloatingView(windowManager, this)
+
         return START_STICKY
     }
 
-
+    /**
+     * Removes views when destroyed
+     */
     override fun onDestroy() {
         super.onDestroy()
         for (view in viewArray) {
@@ -62,7 +70,9 @@ class MainService : Service() {
 
     override fun onBind(intent: Intent?): IBinder? = null
 
-
+    /**
+     * Notification builder for foreground service
+     */
     private fun buildNotification(): Notification {
         val manager = getSystemService(Context.NOTIFICATION_SERVICE) as
                 NotificationManager
@@ -74,16 +84,22 @@ class MainService : Service() {
             )
             manager.createNotificationChannel(channel)
         }
+
+        // Sets PendingIntent to SettingsActivity
         val intent = Intent(this, SettingsActivity::class.java)
         intent.addFlags(FLAG_ACTIVITY_NEW_TASK)
         val pi = PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_IMMUTABLE)
+
+        // Builds Notification
         val notification = NotificationCompat.Builder(this, "main_service")
             .setContentTitle("运行中")
             .setContentText("点我打开设置")
             .setSmallIcon(R.drawable.reconstruction)
             .setLargeIcon(BitmapFactory.decodeResource(resources, R.drawable.cute_icon))
+            // Opens SettingsActivity when clicked
             .setContentIntent(pi)
             .build()
+
         return notification
     }
 
@@ -94,34 +110,35 @@ class MainService : Service() {
     @SuppressLint("InflateParams", "ClickableViewAccessibility")
     fun createFloatingView(windowManager: WindowManager, service: MainService): Array<View> {
 
+        // Initializes views from layout files
         visualView = LayoutInflater.from(service).inflate(R.layout.visual_view, null)
         touchableView = LayoutInflater.from(service).inflate(R.layout.touchable_view, null)
         val viewArray = arrayOf(visualView, touchableView)
 
+        // Sets layout parameters
         val visualViewParams = LayoutParams(
             LayoutParams.WRAP_CONTENT,
             LayoutParams.WRAP_CONTENT,
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+                // Sets view as overlay
                 LayoutParams.TYPE_APPLICATION_OVERLAY
             else
                 LayoutParams.TYPE_PHONE,
+            // Sets view not interactable
             LayoutParams.FLAG_NOT_FOCUSABLE or
                     LayoutParams.FLAG_NOT_TOUCHABLE or
-//                    LayoutParams.FLAG_NOT_TOUCH_MODAL or
                     LayoutParams.FLAG_LAYOUT_NO_LIMITS,
             PixelFormat.TRANSPARENT
         ).apply {
             gravity = Gravity.TOP or Gravity.START
-//            alpha = 0.9f
-            alpha = 1.0f
             x = videoWidthByPX()
             y = videoHeightByPX()
         }
-
         val touchableViewParams = LayoutParams(
             LayoutParams.WRAP_CONTENT,
             LayoutParams.WRAP_CONTENT,
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+                // Sets view as overlay
                 LayoutParams.TYPE_APPLICATION_OVERLAY
             else
                 LayoutParams.TYPE_PHONE,
@@ -132,16 +149,17 @@ class MainService : Service() {
             gravity = Gravity.TOP or Gravity.START
             x = 0
             y = 0
+            // Sets bounding box size
             width = touchableWidthByPX()
             height = touchableHeightByPX()
         }
 
-//        visualView.setOnTouchListener { _, _ -> false }
-//        visualView.setOnClickListener { }
-
+        // Locates visual view according to touchable view
         shiftParams(touchableViewParams, visualViewParams)
 
+        // Sets Listeners for touchable view
         touchableView.setOnTouchListener(
+            // Uses custom OnTouchListener
             OnTouchListener(
                 this,
                 windowManager,
@@ -151,50 +169,59 @@ class MainService : Service() {
                 visualViewParams
             )
         )
-
         touchableView.setOnClickListener {
             interact()
         }
 
+        // initializes video resources
         relaxGif = GifDrawable(resources, R.drawable.relax).apply {
             loopCount = 0
         }
-
         ruaGif = GifDrawable(resources, R.drawable.interact).apply {
             loopCount = 1
         }
 
+        // Sets initial visual view
         (visualView as GifImageView).apply {
             setImageDrawable(relaxGif)
         }
 
+        // Adds views to window manager to display
         windowManager.run {
             addView(visualView, visualViewParams)
             addView(touchableView, touchableViewParams)
         }
 
         return viewArray
-
     }
 
-
+    /**
+     * Changes to ruaGif when interacted
+     */
     private fun interact() {
+        // stop relaxing animation
         relaxGif.stop()
         isRelaxed = false
         ruaGif.reset()
+        // start interacting animation
         (visualView as GifImageView).setImageDrawable(ruaGif)
 
         ruaGif.addAnimationListener(object : AnimationListener {
             override fun onAnimationCompleted(loopNumber: Int) {
+                // reset visual view to relax when animation completed
                 relaxGif.reset()
                 relaxGif.start()
                 (visualView as GifImageView).setImageDrawable(relaxGif)
                 isRelaxed = true
-                ruaGif.removeAnimationListener(this) // 移除监听避免内存泄漏
+                // remove self
+                ruaGif.removeAnimationListener(this)
             }
         })
     }
 
+    /**
+     * Custom OnTouchListener for touchable view
+     */
     inner class OnTouchListener(
         private val context: MainService,
         private val windowManager: WindowManager,
@@ -219,30 +246,43 @@ class MainService : Service() {
             val touchSlop = ViewConfiguration.get(v.context).scaledTouchSlop.toFloat()
             when (event.action) {
                 MotionEvent.ACTION_DOWN -> {
-                    // 记录初始位置
+
+                    // record the initial position
                     initialX = selfParams.x
                     initialY = selfParams.y
                     initialTouchX = event.rawX
                     initialTouchY = event.rawY
+
+                    // reset the dragged & pressed flag
                     isDragged = false
                     isPressed = true
                     longPressTriggered = false
+
+                    // start the long press timer
                     scheduleLongPress()
+
+                    // consume the touch event
                     return true
                 }
 
                 MotionEvent.ACTION_MOVE -> {
+
+                    // calculate shift
                     val deltaX = (event.rawX - initialTouchX).toInt()
                     val deltaY = (event.rawY - initialTouchY).toInt()
 
+                    // apply shift to params
                     selfParams.x = initialX + deltaX
                     selfParams.y = initialY + deltaY
 
+                    // shift visual view accordingly
                     shiftParams(selfParams, relatedParams)
 
+                    // update view layout
                     windowManager.updateViewLayout(selfView, selfParams)
                     windowManager.updateViewLayout(relatedView, relatedParams)
 
+                    // set drag flag if dragged beyond touch slop
                     if (!isDragged) {
                         if (deltaX.absoluteValue > touchSlop || deltaY.absoluteValue > touchSlop) {
                             cancelLongPress()
@@ -250,38 +290,48 @@ class MainService : Service() {
                         }
                     }
 
-                    return true
                 }
 
                 MotionEvent.ACTION_UP -> {
 
+                    // interrupt the long press timer since time unreached
                     cancelLongPress()
 
-                    if (isDragged) {
-                        return true
-                    } else {
+                    // preform click if long press not triggered
+                    if (!isDragged) {
                         if (!longPressTriggered) {
                             selfView.performClick()
                             longPressTriggered = false
                         }
-                        return false
                     }
                 }
 
-                else -> return false
+                else -> {}
             }
+            return true
         }
 
+        /**
+         * Sets long press timer
+         */
         private fun scheduleLongPress() {
+
             longPressRunnable = Runnable {
                 if (isPressed) {
+                    // reset the press triggered flag
                     longPressTriggered = true
+                    // perform long press action
                     context.onLongPress()
                 }
             }
+
+            // trigger long press if uninterrupted
             handler.postDelayed(longPressRunnable!!, LONG_PRESS_TIME)
         }
 
+        /**
+         * Cancels long press timer
+         */
         private fun cancelLongPress() {
             longPressRunnable?.let {
                 handler.removeCallbacks(it)
@@ -290,13 +340,18 @@ class MainService : Service() {
         }
     }
 
+    /**
+     * Opens settings activity when long pressed
+     */
     private fun onLongPress() {
         val openSettingsIntent = Intent(this, SettingsActivity::class.java)
         openSettingsIntent.addFlags(FLAG_ACTIVITY_NEW_TASK)
         startActivity(openSettingsIntent)
     }
 
-
+    /**
+     * Shifts visual view parameters according to touchable view position
+     */
     fun shiftParams(originParams: LayoutParams, relatedParams: LayoutParams) {
         relatedParams.apply {
             x = originParams.x + xShiftByPX()
@@ -304,7 +359,9 @@ class MainService : Service() {
         }
     }
 
-
+    /**
+     * Converts dp to pixel
+     */
     private fun dp2px(dp: Int): Float {
         val px = TypedValue.applyDimension(
             TypedValue.COMPLEX_UNIT_DIP,
@@ -314,6 +371,7 @@ class MainService : Service() {
         return px
     }
 
+    // dumb value getters
     private fun xShiftByPX() = dp2px(X_SHIFT).toInt()
     private fun yShiftByPX() = dp2px(Y_SHIFT).toInt()
     private fun videoWidthByPX() = dp2px(VIDEO_WIDTH).toInt()
@@ -323,6 +381,7 @@ class MainService : Service() {
 
     companion object {
 
+        // constants for positioning
         private const val X_SHIFT = -140
         private const val Y_SHIFT = -327
         private const val VIDEO_WIDTH = 200
@@ -330,6 +389,7 @@ class MainService : Service() {
         private const val TOUCHABLE_WIDTH = 67
         private const val TOUCHABLE_HEIGHT = 145
 
+        // long press time in milliseconds
         private const val LONG_PRESS_TIME = 500L
     }
 
