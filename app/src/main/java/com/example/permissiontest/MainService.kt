@@ -12,6 +12,7 @@ import android.content.Intent
 import android.content.Intent.FLAG_ACTIVITY_NEW_TASK
 import android.graphics.BitmapFactory
 import android.graphics.PixelFormat
+import android.os.Binder
 import android.os.Build
 import android.os.Handler
 import android.os.IBinder
@@ -42,6 +43,12 @@ class MainService : Service() {
     private lateinit var ruaGif: GifDrawable
     private var isRelaxed = true
 
+    private val binder = MainServiceBinder()
+    inner class MainServiceBinder : Binder() {
+        fun getService(): MainService = this@MainService
+    }
+    override fun onBind(intent: Intent?): IBinder = binder
+
     /**
      * Initialize service
      **/
@@ -66,9 +73,6 @@ class MainService : Service() {
             windowManager.removeView(view)
         }
     }
-
-
-    override fun onBind(intent: Intent?): IBinder? = null
 
     /**
      * Notification builder for foreground service

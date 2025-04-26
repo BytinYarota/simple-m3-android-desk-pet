@@ -1,18 +1,44 @@
 package com.example.permissiontest
 
 import android.app.AlertDialog
+import android.content.ComponentName
 import android.content.Intent
+import android.content.ServiceConnection
 import android.os.Bundle
+import android.os.IBinder
+import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
 
 class SettingsActivity : AppCompatActivity() {
 
+    // Service binding
+    private lateinit var myService: MainService
+    private var isBound = false
+
+    /**
+     * Connection to MainService
+     */
+    private val connection = object : ServiceConnection {
+        override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
+            val binder = service as MainService.MainServiceBinder
+            myService = binder.getService()
+            isBound = true
+            Log.d("SettingsActivity", "ServiceConnected")
+        }
+
+        override fun onServiceDisconnected(name: ComponentName?) {
+            isBound = false
+        }
+    }
+
     /**
      * Inflate layout using PreferenceFragmentCompat
      */
     override fun onCreate(savedInstanceState: Bundle?) {
+
+        // Set up service
         super.onCreate(savedInstanceState)
         setContentView(R.layout.settings_activity)
         if (savedInstanceState == null) {
@@ -22,6 +48,24 @@ class SettingsActivity : AppCompatActivity() {
                 .commit()
         }
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
+
+        // Bind to service
+        Intent(this, MainService::class.java).apply {
+            bindService(this, connection, BIND_AUTO_CREATE)
+        }
+    }
+
+    /**
+     * Clean up on destroy
+     */
+    override fun onDestroy() {
+        super.onDestroy()
+
+        // Unbind from service if bound
+        if (isBound) {
+            unbindService(connection)
+            isBound = false
+        }
     }
 
     /**
