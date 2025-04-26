@@ -174,6 +174,7 @@ class MainService : Service() {
         }
         ruaGif = GifDrawable(resources, R.drawable.interact).apply {
             loopCount = 1
+            pause()
         }
 
         // Sets initial visual view
