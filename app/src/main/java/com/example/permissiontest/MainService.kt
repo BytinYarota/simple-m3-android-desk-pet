@@ -135,8 +135,6 @@ class MainService : Service() {
             PixelFormat.TRANSPARENT
         ).apply {
             gravity = Gravity.TOP or Gravity.START
-            x = videoWidthByPX()
-            y = videoHeightByPX()
         }
         val touchableViewParams = LayoutParams(
             LayoutParams.WRAP_CONTENT,
@@ -157,9 +155,6 @@ class MainService : Service() {
             width = touchableWidthByPX()
             height = touchableHeightByPX()
         }
-
-        // Locates visual view according to touchable view
-        shiftParams(touchableViewParams, visualViewParams)
 
         // Sets Listeners for touchable view
         touchableView.setOnTouchListener(
@@ -190,11 +185,14 @@ class MainService : Service() {
             setImageDrawable(relaxGif)
         }
 
-        // Adds views to window manager to display
-        windowManager.run {
+        // show views
+        windowManager.apply {
             addView(visualView, visualViewParams)
             addView(touchableView, touchableViewParams)
         }
+
+        // position views
+        moveTo(0,0)
 
         return viewArray
     }
@@ -235,17 +233,23 @@ class MainService : Service() {
         private val relatedParams: LayoutParams,
     ) : View.OnTouchListener {
 
+        // position recorders
         private var initialX = 0
         private var initialY = 0
         private var initialTouchX = 0f
         private var initialTouchY = 0f
+
+        // flags
         private var isDragged = false
-        private var isPressed = false
         private var longPressTriggered = false
 
+        // delayed detection related
         private val handler = Handler(Looper.getMainLooper())
         private var longPressRunnable: Runnable? = null
 
+        /**
+         * Handles press and drag events
+         */
         override fun onTouch(v: View, event: MotionEvent): Boolean {
             val touchSlop = ViewConfiguration.get(v.context).scaledTouchSlop.toFloat()
             when (event.action) {
@@ -259,7 +263,6 @@ class MainService : Service() {
 
                     // reset the dragged & pressed flag
                     isDragged = false
-                    isPressed = true
                     longPressTriggered = false
 
                     // start the long press timer
@@ -275,16 +278,8 @@ class MainService : Service() {
                     val deltaX = (event.rawX - initialTouchX).toInt()
                     val deltaY = (event.rawY - initialTouchY).toInt()
 
-                    // apply shift to params
-                    selfParams.x = initialX + deltaX
-                    selfParams.y = initialY + deltaY
-
-                    // shift visual view accordingly
-                    shiftParams(selfParams, relatedParams)
-
-                    // update view layout
-                    windowManager.updateViewLayout(selfView, selfParams)
-                    windowManager.updateViewLayout(relatedView, relatedParams)
+                    // apply shift
+                    moveTo(initialX + deltaX, initialY + deltaY)
 
                     // set drag flag if dragged beyond touch slop
                     if (!isDragged) {
@@ -321,12 +316,10 @@ class MainService : Service() {
         private fun scheduleLongPress() {
 
             longPressRunnable = Runnable {
-                if (isPressed) {
-                    // reset the press triggered flag
-                    longPressTriggered = true
-                    // perform long press action
-                    context.onLongPress()
-                }
+                // reset the press triggered flag
+                longPressTriggered = true
+                // perform long press action
+                context.onLongPress()
             }
 
             // trigger long press if uninterrupted
@@ -364,6 +357,22 @@ class MainService : Service() {
     }
 
     /**
+     * move view
+     */
+    fun moveTo(newX: Int, newY: Int){
+        (touchableView.layoutParams as LayoutParams).apply {
+            x = newX
+            y = newY
+        }.run {
+            shiftParams(this, visualView.layoutParams as LayoutParams)
+        }
+        windowManager.apply {
+            updateViewLayout(touchableView, touchableView.layoutParams)
+            updateViewLayout(visualView, visualView.layoutParams)
+        }
+    }
+
+    /**
      * Converts dp to pixel
      */
     private fun dp2px(dp: Int): Float {
@@ -378,8 +387,8 @@ class MainService : Service() {
     // dumb value getters
     private fun xShiftByPX() = dp2px(X_SHIFT).toInt()
     private fun yShiftByPX() = dp2px(Y_SHIFT).toInt()
-    private fun videoWidthByPX() = dp2px(VIDEO_WIDTH).toInt()
-    private fun videoHeightByPX() = dp2px(VIDEO_HEIGHT).toInt()
+//    private fun videoWidthByPX() = dp2px(VIDEO_WIDTH).toInt()
+//    private fun videoHeightByPX() = dp2px(VIDEO_HEIGHT).toInt()
     private fun touchableWidthByPX() = dp2px(TOUCHABLE_WIDTH).toInt()
     private fun touchableHeightByPX() = dp2px(TOUCHABLE_HEIGHT).toInt()
 
@@ -388,8 +397,8 @@ class MainService : Service() {
         // constants for positioning
         private const val X_SHIFT = -140
         private const val Y_SHIFT = -327
-        private const val VIDEO_WIDTH = 200
-        private const val VIDEO_HEIGHT = 200
+//        private const val VIDEO_WIDTH = 200
+//        private const val VIDEO_HEIGHT = 200
         private const val TOUCHABLE_WIDTH = 67
         private const val TOUCHABLE_HEIGHT = 145
 
