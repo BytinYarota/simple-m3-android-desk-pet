@@ -161,11 +161,7 @@ class MainService : Service() {
             // Uses custom OnTouchListener
             OnTouchListener(
                 this,
-                windowManager,
-                touchableView,
-                touchableViewParams,
-                visualView,
-                visualViewParams
+                touchableView
             )
         )
         touchableView.setOnClickListener {
@@ -226,11 +222,7 @@ class MainService : Service() {
      */
     inner class OnTouchListener(
         private val context: MainService,
-        private val windowManager: WindowManager,
         private val selfView: View,
-        private val selfParams: LayoutParams,
-        private val relatedView: View,
-        private val relatedParams: LayoutParams,
     ) : View.OnTouchListener {
 
         // position recorders
@@ -251,7 +243,10 @@ class MainService : Service() {
          * Handles press and drag events
          */
         override fun onTouch(v: View, event: MotionEvent): Boolean {
+
             val touchSlop = ViewConfiguration.get(v.context).scaledTouchSlop.toFloat()
+            val selfParams: LayoutParams = selfView.layoutParams as LayoutParams
+
             when (event.action) {
                 MotionEvent.ACTION_DOWN -> {
 
