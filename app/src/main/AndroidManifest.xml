@@ -34,8 +34,9 @@
             android:exported="false"
             android:foregroundServiceType="dataSync"
             android:taskAffinity="com.example.permission_test.service_task"
-            android:process=":remote"
         >
+
+<!--            android:process=":remote"-->
 <!--             &lt;!&ndash; 配置辅助功能服务参数 &ndash;&gt;-->
 <!--            <meta-data-->
 <!--                android:name="android.accessibilityservice"-->
