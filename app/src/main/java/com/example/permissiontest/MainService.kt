@@ -156,8 +156,8 @@ class MainService : Service() {
             x = 0
             y = 0
             // Sets bounding box size
-            width = touchableWidthByPX()
-            height = touchableHeightByPX()
+            width = TOUCHABLE_WIDTH.byPX()
+            height = TOUCHABLE_HEIGHT.byPX()
         }
 
         // Sets Listeners for touchable view
@@ -349,10 +349,10 @@ class MainService : Service() {
     /**
      * Shifts visual view parameters according to touchable view position
      */
-    fun shiftParams(originParams: LayoutParams, relatedParams: LayoutParams) {
+    private fun shiftParams(originParams: LayoutParams, relatedParams: LayoutParams) {
         relatedParams.apply {
-            x = originParams.x + xShiftByPX()
-            y = originParams.y + yShiftByPX()
+            x = originParams.x + X_SHIFT.byPX()
+            y = originParams.y + Y_SHIFT.byPX()
         }
     }
 
@@ -375,22 +375,14 @@ class MainService : Service() {
     /**
      * Converts dp to pixel
      */
-    private fun dp2px(dp: Int): Float {
+    private fun Int.byPX(): Int {
         val px = TypedValue.applyDimension(
             TypedValue.COMPLEX_UNIT_DIP,
-            dp.toFloat(),
+            this.toFloat(),
             resources.displayMetrics
         )
-        return px
+        return px.toInt()
     }
-
-    // dumb value getters
-    private fun xShiftByPX() = dp2px(X_SHIFT).toInt()
-    private fun yShiftByPX() = dp2px(Y_SHIFT).toInt()
-//    private fun videoWidthByPX() = dp2px(VIDEO_WIDTH).toInt()
-//    private fun videoHeightByPX() = dp2px(VIDEO_HEIGHT).toInt()
-    private fun touchableWidthByPX() = dp2px(TOUCHABLE_WIDTH).toInt()
-    private fun touchableHeightByPX() = dp2px(TOUCHABLE_HEIGHT).toInt()
 
     companion object {
 
