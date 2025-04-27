@@ -10,6 +10,7 @@ import android.app.Service
 import android.content.Context
 import android.content.Intent
 import android.content.Intent.FLAG_ACTIVITY_NEW_TASK
+import android.content.res.Configuration
 import android.graphics.BitmapFactory
 import android.graphics.PixelFormat
 import android.os.Binder
@@ -35,6 +36,7 @@ import kotlin.math.absoluteValue
 class MainService : Service() {
 
     private lateinit var windowManager: WindowManager
+
     private lateinit var viewArray: Array<View>
     private lateinit var visualView: View
     private lateinit var touchableView: View
@@ -42,6 +44,8 @@ class MainService : Service() {
     private lateinit var relaxGif: GifDrawable
     private lateinit var ruaGif: GifDrawable
     private var isRelaxed = true
+
+    private var orientation = Configuration.ORIENTATION_PORTRAIT
 
     private val binder = MainServiceBinder()
     inner class MainServiceBinder : Binder() {
