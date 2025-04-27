@@ -5,7 +5,6 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.net.Uri
 import android.os.Build
 import android.provider.Settings
 import android.view.WindowManager
@@ -21,6 +20,7 @@ import android.os.Message
 import android.util.Log
 import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
+import androidx.core.net.toUri
 
 /**
  * Checks permissions then starts main service thread and die
@@ -84,6 +84,39 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
+     * Pushes progress message to main thread handler
+     */
+    private fun progress(what: Int) {
+        val msg = mainHandler.obtainMessage(what)
+        mainHandler.sendMessage(msg)
+    }
+
+    /**
+     * Initializes late init launchers for permission request
+     */
+    private fun initializeLauncher() {
+        overlayPermissionLauncher = registerForActivityResult(
+            ActivityResultContracts.StartActivityForResult()
+        ) { _ ->
+            if (Settings.canDrawOverlays(this)) {
+                popText("success")
+                progress(OVERLAY_PERMISSION_GAINED)
+            } else {
+                failProgress(OVERLAY_FORBIDDEN)
+            }
+        }
+        requestPermissionLauncher = registerForActivityResult(
+            ActivityResultContracts.RequestPermission()
+        ) { isGranted ->
+            if (isGranted) {
+                progress(NOTIFICATION_PERMISSION_GAINED)
+            } else {
+                failProgress(NOTIFICATION_FORBIDDEN)
+            }
+        }
+    }
+
+    /**
      * Checks overlay permission
      */
     private fun checkOverlayPermission() {
@@ -94,6 +127,21 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    /**
+     * Requests overlay permission by starting system settings activity
+     */
+    private fun requestOverlayPermission() {
+        popText("requesting overlay")
+        val intent = Intent(
+            Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+            "package:$packageName".toUri()
+        )
+        overlayPermissionLauncher.launch(intent)
+    }
+
+    /**
+     * Checks overlay permission
+     */
     private fun checkNotificationPermission() {
         if (Build.VERSION.SDK_INT > 33) {
             if (ContextCompat.checkSelfPermission(
@@ -125,53 +173,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
-     * Initializes late init launchers for permission request
-     */
-    private fun initializeLauncher() {
-        overlayPermissionLauncher = registerForActivityResult(
-            ActivityResultContracts.StartActivityForResult()
-        ) { _ ->
-            if (Settings.canDrawOverlays(this)) {
-                popText("success")
-                progress(OVERLAY_PERMISSION_GAINED)
-            } else {
-                failProgress(OVERLAY_FORBIDDEN)
-            }
-        }
-        requestPermissionLauncher = registerForActivityResult(
-            ActivityResultContracts.RequestPermission()
-        ) { isGranted ->
-            if (isGranted) {
-                progress(NOTIFICATION_PERMISSION_GAINED)
-            } else {
-                failProgress(NOTIFICATION_FORBIDDEN)
-            }
-        }
-    }
-
-    /**
-     * Requests overlay permission by starting system settings activity
-     */
-    private fun requestOverlayPermission() {
-        popText("requesting overlay")
-        val intent = Intent(
-            Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
-            Uri.parse("package:$packageName")
-        )
-        overlayPermissionLauncher.launch(intent)
-    }
-
-    /**
-     * Sets activity not interactable
-     */
-    private fun deinteractableActivity() {
-        window.setFlags(
-            WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE,
-            WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE
-        )
-    }
-
-    /**
      * Pops failure message and finishes activity
      */
     private fun failProgress(failure: Int) {
@@ -188,11 +189,39 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
-     * Pushes progress message to main thread handler
+     * Checks if main service is running
      */
-    private fun progress(what: Int) {
-        val msg = mainHandler.obtainMessage(what)
-        mainHandler.sendMessage(msg)
+    private fun serviceRunning(): Boolean {
+        val manager = getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+        val runningServices = manager.getRunningServices(Integer.MAX_VALUE)
+
+        val targetServiceName = ComponentName(this, MainService::class.java).className
+        val isRunning = runningServices.any { it.service.className == targetServiceName }
+
+        return isRunning
+    }
+
+    /**
+     * Sets activity not interactable
+     */
+    private fun deinteractableActivity() {
+        window.setFlags(
+            WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE,
+            WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE
+        )
+    }
+
+    /**
+     * Hides view
+     */
+    private fun hideView() {
+        window.apply {
+            addFlags(WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS)
+            addFlags(WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                setDecorFitsSystemWindows(false)
+            }
+        }
     }
 
     /**
@@ -207,32 +236,6 @@ class MainActivity : AppCompatActivity() {
      */
     private fun printLog(text: String) {
         Log.d("PermissionTest", text)
-    }
-
-    /**
-     * Checks if main service is running
-     */
-    private fun serviceRunning(): Boolean {
-        val manager = getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
-        val runningServices = manager.getRunningServices(Integer.MAX_VALUE)
-
-        val targetServiceName = ComponentName(this, MainService::class.java).className
-        val isRunning = runningServices.any { it.service.className == targetServiceName }
-
-        return isRunning
-    }
-
-    /**
-     * Hides view
-     */
-    private fun hideView() {
-        window.apply {
-            addFlags(WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS)
-            addFlags(WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN)
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                setDecorFitsSystemWindows(false)
-            }
-        }
     }
 
     private companion object {
