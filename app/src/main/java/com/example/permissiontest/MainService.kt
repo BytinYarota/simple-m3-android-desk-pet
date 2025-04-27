@@ -7,17 +7,21 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Service
+import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.Intent.FLAG_ACTIVITY_NEW_TASK
+import android.content.IntentFilter
 import android.content.res.Configuration
 import android.graphics.BitmapFactory
 import android.graphics.PixelFormat
+import android.graphics.Point
 import android.os.Binder
 import android.os.Build
 import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
+import android.util.Log
 import android.util.TypedValue
 import android.view.Gravity
 import android.view.LayoutInflater
@@ -48,9 +52,11 @@ class MainService : Service() {
     private var orientation = Configuration.ORIENTATION_PORTRAIT
 
     private val binder = MainServiceBinder()
+
     inner class MainServiceBinder : Binder() {
         fun getService(): MainService = this@MainService
     }
+
     override fun onBind(intent: Intent?): IBinder = binder
 
     /**
@@ -64,6 +70,18 @@ class MainService : Service() {
         // Initializes views
         windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
         viewArray = createFloatingView(windowManager, this)
+
+
+        // Set orientation change listener
+        val orientationReceiver = object : BroadcastReceiver() {
+            override fun onReceive(context: Context, intent: Intent?) {
+                val config = context.resources.configuration
+                val orientation = config.orientation
+                updateOrientation(orientation)
+            }
+        }
+        val filter = IntentFilter(Intent.ACTION_CONFIGURATION_CHANGED)
+        registerReceiver(orientationReceiver, filter)
 
         return START_STICKY
     }
@@ -128,7 +146,7 @@ class MainService : Service() {
             LayoutParams.WRAP_CONTENT,
             LayoutParams.WRAP_CONTENT,
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
-                // Sets view as overlay
+            // Sets view as overlay
                 LayoutParams.TYPE_APPLICATION_OVERLAY
             else
                 LayoutParams.TYPE_PHONE,
@@ -139,12 +157,14 @@ class MainService : Service() {
             PixelFormat.TRANSPARENT
         ).apply {
             gravity = Gravity.TOP or Gravity.START
+            height = LayoutParams.WRAP_CONTENT
+            width = LayoutParams.WRAP_CONTENT
         }
         val touchableViewParams = LayoutParams(
             LayoutParams.WRAP_CONTENT,
             LayoutParams.WRAP_CONTENT,
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
-                // Sets view as overlay
+            // Sets view as overlay
                 LayoutParams.TYPE_APPLICATION_OVERLAY
             else
                 LayoutParams.TYPE_PHONE,
@@ -193,7 +213,7 @@ class MainService : Service() {
         }
 
         // position views
-        moveTo(0,0)
+        moveTo(0, 0)
 
         return viewArray
     }
@@ -347,25 +367,89 @@ class MainService : Service() {
     }
 
     /**
+     * Update layout params according to orientation
+     */
+    fun updateOrientation(newOrientation: Int) {
+        val touchableParams = touchableView.layoutParams as LayoutParams
+
+        val oldX = touchableParams.x
+        val oldY = touchableParams.y
+
+//        val screenSize = Point()
+//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+//            display.getRealSize(screenSize)
+//        } else {
+//            windowManager.defaultDisplay.getRealSize(screenSize)
+//        }
+//        screenSize.also {
+//            Log.d("screen size", "${it.x} ${it.y}")
+//        }
+
+        // swap x y coordinate if orientation changed
+        if (orientation != newOrientation) {
+            orientation = newOrientation
+            moveTo(oldY, oldX)
+        } else {
+            moveTo(oldX, oldY)
+        }
+    }
+
+//    private fun setupOrientationListener() {
+//        val orientationEventListener = object : OrientationEventListener(this) {
+//            override fun onOrientationChanged(orientation: Int) {
+//                val newOrientation = when (windowManager.defaultDisplay.rotation) {
+//                    Surface.ROTATION_0, Surface.ROTATION_180 ->
+//                        Configuration.ORIENTATION_PORTRAIT
+//                    Surface.ROTATION_90, Surface.ROTATION_270 ->
+//                        Configuration.ORIENTATION_LANDSCAPE
+//                    else -> Configuration.ORIENTATION_PORTRAIT
+//                }
+//
+//                if (newOrientation != orientation) {
+//                    currentOrientation = newOrientation
+//                    adjustFloatingViewPosition()
+//                }
+//            }
+//        }
+//        orientationEventListener.enable()
+//    }
+
+    /**
      * Shifts visual view parameters according to touchable view position
      */
     private fun shiftParams(originParams: LayoutParams, relatedParams: LayoutParams) {
         relatedParams.apply {
-            x = originParams.x + X_SHIFT.byPX()
-            y = originParams.y + Y_SHIFT.byPX()
+            //shift according to orientation
+            when (orientation) {
+                Configuration.ORIENTATION_PORTRAIT -> {
+                    x = originParams.x + X_SHIFT.byPX()
+                    y = originParams.y + Y_SHIFT.byPX()
+                }
+
+                Configuration.ORIENTATION_LANDSCAPE -> {
+                    x = originParams.x + Y_SHIFT.byPX()
+                    y = originParams.y + X_SHIFT.byPX()
+                }
+
+                else -> {}
+            }
         }
     }
 
     /**
      * move view
      */
-    fun moveTo(newX: Int, newY: Int){
+    fun moveTo(newX: Int, newY: Int) {
         (touchableView.layoutParams as LayoutParams).apply {
             x = newX
             y = newY
         }.run {
             shiftParams(this, visualView.layoutParams as LayoutParams)
         }
+        updateLayout()
+    }
+
+    private fun updateLayout() {
         windowManager.apply {
             updateViewLayout(touchableView, touchableView.layoutParams)
             updateViewLayout(visualView, visualView.layoutParams)
@@ -389,7 +473,8 @@ class MainService : Service() {
         // constants for positioning
         private const val X_SHIFT = -140
         private const val Y_SHIFT = -327
-//        private const val VIDEO_WIDTH = 200
+
+        //        private const val VIDEO_WIDTH = 200
 //        private const val VIDEO_HEIGHT = 200
         private const val TOUCHABLE_WIDTH = 67
         private const val TOUCHABLE_HEIGHT = 145

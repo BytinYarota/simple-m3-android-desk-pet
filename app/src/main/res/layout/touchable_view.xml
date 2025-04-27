@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-<View
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<View xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/touchable"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
     android:background="@android:color/transparent"
     android:clickable="true"
-    android:focusable="true"/>
+    android:focusable="true"
+    tools:ignore="SpeakableTextPresentCheck" />
