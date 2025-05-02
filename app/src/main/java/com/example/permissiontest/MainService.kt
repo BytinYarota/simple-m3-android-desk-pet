@@ -13,9 +13,7 @@ import android.content.Intent
 import android.content.Intent.FLAG_ACTIVITY_NEW_TASK
 import android.content.IntentFilter
 import android.content.res.Configuration
-import android.graphics.BitmapFactory
 import android.graphics.PixelFormat
-import android.graphics.Point
 import android.os.Binder
 import android.os.Build
 import android.os.Handler
@@ -121,7 +119,6 @@ class MainService : Service() {
             .setContentTitle("运行中")
             .setContentText("点我打开设置")
             .setSmallIcon(R.drawable.reconstruction)
-            .setLargeIcon(BitmapFactory.decodeResource(resources, R.drawable.cute_icon))
             // Opens SettingsActivity when clicked
             .setContentIntent(pi)
             .build()
