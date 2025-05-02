@@ -99,7 +99,6 @@ class MainActivity : AppCompatActivity() {
             ActivityResultContracts.StartActivityForResult()
         ) { _ ->
             if (Settings.canDrawOverlays(this)) {
-                popText("success")
                 progress(OVERLAY_PERMISSION_GAINED)
             } else {
                 failProgress(OVERLAY_FORBIDDEN)
@@ -131,7 +130,6 @@ class MainActivity : AppCompatActivity() {
      * Requests overlay permission by starting system settings activity
      */
     private fun requestOverlayPermission() {
-        popText("requesting overlay")
         val intent = Intent(
             Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
             "package:$packageName".toUri()
