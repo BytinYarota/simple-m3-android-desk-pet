@@ -2,10 +2,9 @@
 
     <PreferenceCategory app:title="设置">
 
-        <SwitchPreference
-            app:key="test"
-            app:title="test setting"/>
-
+        <Preference
+            app:key="centralize"
+            app:title="居中"/>
 
     </PreferenceCategory>
 

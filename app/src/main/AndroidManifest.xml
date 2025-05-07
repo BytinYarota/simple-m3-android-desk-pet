@@ -13,44 +13,41 @@
         android:fullBackupContent="@xml/backup_rules"
         android:icon="@drawable/sleepy_icon"
         android:label="@string/app_name"
+        android:persistent="true"
         android:supportsRtl="true"
         android:theme="@style/Theme.PermissionTest"
-        tools:targetApi="31"
-        android:persistent="true">
+        tools:targetApi="31">
 
         <activity
             android:name=".SettingsActivity"
-            android:exported="false"
-            android:taskAffinity="com.example.permission_test.setting_task"
-            android:launchMode="singleInstance"
             android:excludeFromRecents="true"
+            android:exported="false"
+            android:launchMode="singleInstance"
             android:noHistory="true"
-            android:theme="@style/Theme.DisabledPreview"
-            />
+            android:taskAffinity="com.example.permission_test.setting_task"
+            android:theme="@style/Theme.DisabledPreview" />
 
         <service
             android:name=".MainService"
             android:enabled="true"
             android:exported="false"
             android:foregroundServiceType="dataSync"
-            android:taskAffinity="com.example.permission_test.service_task"
-        >
+            android:taskAffinity="com.example.permission_test.service_task">
 
-<!--            android:process=":remote"-->
-<!--             &lt;!&ndash; 配置辅助功能服务参数 &ndash;&gt;-->
-<!--            <meta-data-->
-<!--                android:name="android.accessibilityservice"-->
-<!--                android:resource="@xml/accessibility_service_config" />-->
-<!--            <intent-filter>-->
-<!--                <action android:name="android.accessibilityservice.AccessibilityService" />-->
-<!--            </intent-filter>-->
+            <!-- android:process=":remote" -->
+            <!-- &lt;!&ndash; 配置辅助功能服务参数 &ndash;&gt; -->
+            <!-- <meta-data -->
+            <!-- android:name="android.accessibilityservice" -->
+            <!-- android:resource="@xml/accessibility_service_config" /> -->
+            <!-- <intent-filter> -->
+            <!-- <action android:name="android.accessibilityservice.AccessibilityService" /> -->
+            <!-- </intent-filter> -->
         </service>
-
 
         <activity
             android:name=".MainActivity"
-            android:exported="true"
             android:excludeFromRecents="true"
+            android:exported="true"
             android:noHistory="true"
             android:theme="@style/Theme.InvisibleActivity">
             <intent-filter>

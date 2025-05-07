@@ -131,7 +131,7 @@ class MainService : Service() {
      * Build and show main view
      */
     @SuppressLint("InflateParams", "ClickableViewAccessibility")
-    fun createFloatingView(windowManager: WindowManager, service: MainService): Array<View> {
+    private fun createFloatingView(windowManager: WindowManager, service: MainService): Array<View> {
 
         // Initializes views from layout files
         visualView = LayoutInflater.from(service).inflate(R.layout.visual_view, null)
@@ -366,7 +366,7 @@ class MainService : Service() {
     /**
      * Update layout params according to orientation
      */
-    fun updateOrientation(newOrientation: Int) {
+    private fun updateOrientation(newOrientation: Int) {
         val touchableParams = touchableView.layoutParams as LayoutParams
 
         val oldX = touchableParams.x
@@ -440,15 +440,15 @@ class MainService : Service() {
         when (orientation){
             Configuration.ORIENTATION_PORTRAIT -> {
                 moveTo(
-                    newX - touchableView.layoutParams.width,
-                    newY - touchableView.layoutParams.height
+                    newX - touchableView.layoutParams.width/2,
+                    newY - touchableView.layoutParams.height/2
                 )
             }
 
             Configuration.ORIENTATION_LANDSCAPE -> {
                 moveTo(
-                    newX - touchableView.layoutParams.height,
-                    newY - touchableView.layoutParams.width
+                    newX - touchableView.layoutParams.height/2,
+                    newY - touchableView.layoutParams.width/2
                 )
             }
 
@@ -459,7 +459,7 @@ class MainService : Service() {
     /**
      * move view
      */
-    fun moveTo(newX: Int, newY: Int) {
+    private fun moveTo(newX: Int, newY: Int) {
         (touchableView.layoutParams as LayoutParams).apply {
             x = newX
             y = newY

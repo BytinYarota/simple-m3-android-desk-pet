@@ -4,9 +4,14 @@ import android.app.AlertDialog
 import android.content.ComponentName
 import android.content.Intent
 import android.content.ServiceConnection
+import android.content.SharedPreferences
+import android.content.SharedPreferences.Editor
+import android.graphics.Point
+import android.os.Build
 import android.os.Bundle
 import android.os.IBinder
 import android.util.Log
+import android.view.WindowManager
 import androidx.appcompat.app.AppCompatActivity
 import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
@@ -14,7 +19,7 @@ import androidx.preference.PreferenceFragmentCompat
 class SettingsActivity : AppCompatActivity() {
 
     // Service binding
-    private lateinit var myService: MainService
+    private lateinit var mainService: MainService
     private var isBound = false
 
     /**
@@ -23,7 +28,7 @@ class SettingsActivity : AppCompatActivity() {
     private val connection = object : ServiceConnection {
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
             val binder = service as MainService.MainServiceBinder
-            myService = binder.getService()
+            mainService = binder.getService()
             isBound = true
             Log.d("SettingsActivity", "ServiceConnected")
         }
@@ -73,6 +78,10 @@ class SettingsActivity : AppCompatActivity() {
      */
     class SettingsFragment(private val activity: AppCompatActivity) : PreferenceFragmentCompat() {
         override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
+
+            // Shared Preference Storage
+            val preferenceEditor = activity.getSharedPreferences("user", MODE_PRIVATE).edit()
+
             setPreferencesFromResource(R.xml.root_preferences, rootKey)
 
             // quit button
@@ -80,6 +89,20 @@ class SettingsActivity : AppCompatActivity() {
                 popConfirmDialog()
                 true
             }
+
+            findPreference<Preference>("centralize")?.setOnPreferenceClickListener {
+                val screenSize = Point()
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                    activity.display.getRealSize(screenSize)
+                } else {
+                    (activity.getSystemService(WINDOW_SERVICE) as WindowManager).defaultDisplay.getRealSize(screenSize)
+                }
+                screenSize.apply{
+                    (activity as SettingsActivity).mainService.moveCenterTo(x/2, y/2)
+                }
+                true
+            }
+
         }
 
         /**
