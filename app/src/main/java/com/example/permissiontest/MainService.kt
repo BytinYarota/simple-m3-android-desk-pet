@@ -434,6 +434,29 @@ class MainService : Service() {
     }
 
     /**
+     *  center positioning based on screen orientation
+     */
+    fun moveCenterTo(newX: Int, newY: Int) {
+        when (orientation){
+            Configuration.ORIENTATION_PORTRAIT -> {
+                moveTo(
+                    newX - touchableView.layoutParams.width,
+                    newY - touchableView.layoutParams.height
+                )
+            }
+
+            Configuration.ORIENTATION_LANDSCAPE -> {
+                moveTo(
+                    newX - touchableView.layoutParams.height,
+                    newY - touchableView.layoutParams.width
+                )
+            }
+
+            else -> {}
+        }
+    }
+
+    /**
      * move view
      */
     fun moveTo(newX: Int, newY: Int) {
