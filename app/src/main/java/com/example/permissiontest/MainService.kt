@@ -12,6 +12,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.Intent.FLAG_ACTIVITY_NEW_TASK
 import android.content.IntentFilter
+import android.content.SharedPreferences
 import android.content.res.Configuration
 import android.graphics.PixelFormat
 import android.os.Binder
@@ -29,6 +30,7 @@ import android.view.ViewConfiguration
 import android.view.WindowManager
 import android.view.WindowManager.LayoutParams
 import androidx.core.app.NotificationCompat
+import androidx.preference.Preference
 import pl.droidsonroids.gif.AnimationListener
 import pl.droidsonroids.gif.GifDrawable
 import pl.droidsonroids.gif.GifImageView
@@ -36,6 +38,8 @@ import kotlin.math.absoluteValue
 
 
 class MainService : Service() {
+
+    private lateinit var sharedPreferences: SharedPreferences
 
     private lateinit var windowManager: WindowManager
 
@@ -65,6 +69,8 @@ class MainService : Service() {
         val notification = buildNotification()
         startForeground(1, notification)
 
+        sharedPreferences = getSharedPreferences("user", MODE_PRIVATE)
+
         // Initializes views
         windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
         viewArray = createFloatingView(windowManager, this)
@@ -88,10 +94,18 @@ class MainService : Service() {
      * Removes views when destroyed
      */
     override fun onDestroy() {
-        super.onDestroy()
+
+        val params = touchableView.layoutParams as LayoutParams
+        sharedPreferences.edit().apply {
+            putInt("x", params.x)
+            putInt("y", params.y)
+            apply()
+        }
         for (view in viewArray) {
             windowManager.removeView(view)
         }
+
+        super.onDestroy()
     }
 
     /**
@@ -210,7 +224,12 @@ class MainService : Service() {
         }
 
         // position views
-        moveTo(0, 0)
+        sharedPreferences.apply {
+            moveTo(
+                getInt("x", 0),
+                getInt("y", 0)
+            )
+        }
 
         return viewArray
     }
